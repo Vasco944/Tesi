@@ -223,30 +223,53 @@ def choose_parameter():
 		top = Toplevel(master)
 		top.geometry('{}x{}'.format(1100, 500))
 
-	        alpha = Scale(top, from_= 0.4, to= 0.6,length = 500, resolution = 0.01, label = 'C',  orient=HORIZONTAL)
+	        alpha = Scale(top, from_= 100, to= 1600,length = 500, resolution = 4.0, label = 'Time Interval',  orient=HORIZONTAL)
 		alpha.grid(row = 0, column = 1)
 
-		step = Scale(top, from_=step_min, to=step_max,length = 500,  tickinterval = 0.01, resolution = 0.1,  label = "lambda", orient=HORIZONTAL)
+		step = Scale(top, from_=1, to=10,length = 500, resolution = 0.0001,  label = "C", orient=HORIZONTAL)
 		step.grid(row = 1, column = 1)
 
-		mu_plus = 0.0
+		mu_plus = Scale(top, from_=0.1, to=2.0,length = 500, resolution = 0.001, label = "r_LTD/LTP", orient=HORIZONTAL)
+		mu_plus.grid(row = 2, column = 1)
 
 		mu_minus = 1.0
 
 		initweight = Scale(top, from_=initweight_min, to=initweight_max,length = 500,  tickinterval = 0.01, resolution = 0.1, label = "InitWeight", orient=HORIZONTAL)
-		initweight.grid(row = 2, column = 1)
+		initweight.grid(row = 3, column = 1)
 		
 		maxweight = Scale(top, from_=maxweight_min, to= maxweight_max,length = 500,  tickinterval = 0.01, resolution = 0.1, label = "MaxWeight", orient=HORIZONTAL)
-		maxweight.grid(row = 3, column = 1)
+		maxweight.grid(row = 4, column = 1)
 
 		tau_m = Scale(top, from_=tau_m_min, to=tau_m_max,length = 500,  tickinterval = 0.01, resolution = 0.1,  label = "tau_minus", orient=HORIZONTAL)
-		tau_m.grid(row = 4, column = 1)
+		tau_m.grid(row = 5, column = 1)
 
 		tau_p = Scale(top, from_=2.0, to=200.0,length = 500,  tickinterval = 0.01, resolution = 1.0,  label = "tau_plus", orient=HORIZONTAL)
-		tau_p.grid(row = 5, column = 1)
+		tau_p.grid(row = 6, column = 1)
 
 		Plot = tk.Button(top, text = "Plot", command = plot)
-		Plot.grid(row = 6, column = 1)
+		Plot.grid(row = 7, column = 1)
+
+	if Model and stdp == 'Sgritta':
+		top = Toplevel(master)
+		top.geometry('{}x{}'.format(1100, 500))
+
+		alpha = Scale(top, from_= 5.89235138e+01, to= 1.06555590e+02 ,length = 500, resolution = 0.01, label = "A", orient=HORIZONTAL)
+		alpha.grid(row = 0, column = 1)
+
+		step = Scale(top, from_=1.35240906e-02, to=1.97636875e-02, length = 500, resolution = 0.0000001,  label = "B", orient=HORIZONTAL)
+		step.grid(row = 1, column = 1)
+
+		initweight = Scale(top, from_=initweight_min, to=initweight_max,length = 500,  tickinterval = 0.01, resolution = 0.1, label = "InitWeight", orient=HORIZONTAL)
+		initweight.grid(row = 3, column = 1)
+		
+		maxweight = Scale(top, from_=maxweight_min, to= maxweight_max,length = 500,  tickinterval = 0.01, resolution = 0.1, label = "MaxWeight", orient=HORIZONTAL)
+		maxweight.grid(row = 4, column = 1)
+
+		tau_p = Scale(top, from_=2.17183886e-02/2, to=2.76061848e-02,length = 500, resolution = 0.0000001,  label = "C", orient=HORIZONTAL)
+		tau_p.grid(row = 6, column = 1)
+
+		Plot = tk.Button(top, text = "Plot", command = plot)
+		Plot.grid(row = 7, column = 1)
 		
 
 def plot():
@@ -256,33 +279,54 @@ def plot():
 	from matplotlib.figure import Figure
 	import estdp_fun
 	import istdp_fun
+	import sgritta_fun
 	global c
 	if Model == 'Guetig':
 		mu_p = mu_plus.get()
 		mu_m = mu_minus.get()
 
-	a = alpha.get()
-	s = step.get()
-	ini = initweight.get()
-	maxw = maxweight.get()
-	taum = tau_m.get()
-	taup = tau_p.get()
-	if Model != 'Guetig':
+	if Model != 'Guetig' and stdp!= 'Sgritta':
 		mu_p = mu_plus
 		mu_m = mu_minus
+		
 	
 	if (stdp == 'eSTDP'):
+		a = alpha.get()
+		s = step.get()
+		ini = initweight.get()
+		maxw = maxweight.get()
+		taum = tau_m.get()
+		taup = tau_p.get()
 		pesi = estdp_fun.eSTDP(a, s, mu_p, mu_m, ini, maxw, taum, taup)
-		W = pesi[0:200]
-		deltaTime= range(-100, 100)
+		W = pesi[0:201]
+		deltaTime= range(-100, 101)
 
 		
 
 	if (stdp == 'iSTDP'):
-		pesi = istdp_fun.iSTDP(a, s, mu_p, mu_m, ini, maxw, taum, taup, c)
-		c = c + 1
-		W = pesi[0:600]
-		deltaTime= range(-300, 300)
+		a = alpha.get()
+		s = step.get()
+		ini = initweight.get()
+		maxw = maxweight.get()
+		taum = tau_m.get()
+		taup = tau_p.get()
+                mu_p = mu_plus.get()
+		pesi = istdp_fun.iSTDP(a, s, mu_p, ini, maxw, taup, c) #come time interval si intende la distanza tra il valore minimo e il valore massimo di deltaTime
+		c= c + 1					                   # eg time interval 1000 asse tempo va da -500 a +500
+		W = pesi[0:a+1]
+		deltaTime= range(-a/2, a/2 + 1)
+
+	if (stdp == 'Sgritta'):
+		a = alpha.get()
+		s = step.get()
+		ini = initweight.get()
+		maxw = maxweight.get()
+		taup = tau_p.get()
+		pesi = sgritta_fun.Sgritta(a, s, ini, maxw, taup, c) #come time interval si intende la distanza tra il valore minimo e il valore massimo di deltaTime
+		c= c + 1					                   # eg time interval 1000 asse tempo va da -500 a +500
+		W = pesi[0:201]
+		deltaTime= range(-100, 101)
+
 	f = Figure()
 	a = f.add_subplot(111)
 	a.plot(deltaTime, W)
@@ -309,7 +353,7 @@ for btn in btnList:
 	contentMenu.add_command(label=btn, command = lambda btn=btn: ModSelect(btn))
 	btnMenu.pack()
 
-graph_list=['eSTDP', 'iSTDP']
+graph_list=['eSTDP', 'iSTDP', 'Sgritta']
 
 btnMenu = tk.Menubutton(master, text='STDP')
 contentMenu = tk.Menu(btnMenu)
